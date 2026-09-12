@@ -14,83 +14,43 @@
 - Member 2: [Sreeram S Menon] - [Government Engineering College,Thrissur]
 
 ### Project Description
-[2-3 lines about what your project does]
+[Sneeze-Deflector is an edge-based optical tracking and reflex-interruption system developed by Team Udayipp (led by Advaith V Anand and co-led by Sreeram S Menon). Built with a cockpit HUD visual interface, it detects the physical onset of an impending sneeze and deploys an instant acoustic countermeasure to halt the involuntary reflex.  Biometric Optical Tracking: Uses in-browser MediaPipe landmark inference on the user's webcam feed to track 468 facial mesh coordinates at up to 60 FPS.  Pre-Sneeze Feature Detection: Measures minute facial shifts using three key ratios: Eye Aspect Ratio (EAR) for eye clenching, the Nose Scrunch Index (distance from nose bridge to upper lip normalized against face height), and Mouth Aspect Ratio (MAR) for pre-sneeze mouth flaring.  Threat Scoring Algorithm: Applies an exponential moving average (EMA) against an individualized baseline to calculate a real-time "Sneeze Threat Score" (0–100%).  Acoustic Shockwave Interruption: When the threat score exceeds the configured threshold (default: 75%), the client-side Web Audio API triggers a loud, polyphonic synthesized stadium airhorn pattern paired with a 500 ms high-contrast strobe overlay to startle the nervous system and disrupt the sneeze spasm.  Local Edge Processing: Operates entirely client-side with zero server latency and zero external video transmission, ensuring complete biometric privacy.]
 
 ### The Problem (that doesn't exist)
-[What ridiculous problem are you solving?]
+[The ridiculous problem being solved is the inability to stop an inconvenient or embarrassing sneeze before it happens.  Instead of letting an involuntary sneeze explode during high-stakes moments like important presentations, live streams, or quiet meetings, Sneeze-Deflector treats a sneeze like an incoming missile threat. It uses optical computer vision to track microscopic facial contortions—like involuntary eye clenching and nose scrunching—and "deflects" the reflex by blasting an unexpected, synthetic stadium airhorn directly at the user to startle their nervous system into completely aborting the sneeze.]
 
 ### The Solution (that nobody asked for)
-[How are you solving it? Keep it fun!]
+[Instead of using a tissue or quietly turning your head like a normal human being, we built a full-blown sci-fi missile-defense system for your face: Sneeze-Deflector.  It treats every impending tickle in your sinuses like a Class-5 airborne threat. We’ve weaponized pure auditory psychological warfare against your own autonomic nervous system. Why let a sneeze happen when you can scare your brain so badly that it simply forgets it had to sneeze in the first place?  How are we solving it?Staring Intently at Your Face at 60 FPS: Through your webcam, our tactical HUD watches your skull using 468 cranial tracking points like you're an enemy fighter jet locked into a target reticle.  Measuring the "Ugly Pre-Sneeze Face": The second you start scrunching your nose into a goblin, clenching your eyelids into raisins, and flaring your mouth open, our algorithm calculates an aggressive Sneeze Threat Score from 0 to 100%.  The Acoustic Ambush: The exact millisecond your face hits peak crisis (>75% threat score), the app unleashes an unholy, ear-splitting barrage of synthesized stadium airhorns through your speakers.  Sensory Overload Shockwave: To ensure your respiratory system completely short-circuits, your screen flashes violently with a 500 ms neon strobe alert screaming "ACOUSTIC SHOCKWAVE DEPLOYED".  Result: You jump out of your chair, your fight-or-flight response kicks into overdrive, the involuntary spasm is instantly neutralized, and your sneeze is completely vanished into thin air. You're welcome.  ]
 
 ## Technical Details
 ### Technologies/Components Used
 For Software:
-- [Languages used]
-- [Frameworks used]
-- [Libraries used]
-- [Tools used]
+[JavaScript (ES Module), HTML5, CSS3]  [Web Audio API, MediaPipe Tasks Vision Framework]  [@mediapipe/tasks-vision (FaceLandmarker, FilesetResolver)]  [Google Fonts (Orbitron, Rajdhani, Share Tech Mono), HTML5 Canvas API, MediaDevices Web API (getUserMedia)]
 
-For Hardware:
-- [List main components]
-- [List specifications]
-- [List tools required]
-
-### Implementation
-For Software:
-# Installation
-[commands]
-
-# Run
-[commands]
-
-### Project Documentation
-For Software:
 
 # Screenshots (Add at least 3)
-![Screenshot1](Add screenshot 1 here with proper name)
-*Add caption explaining what this shows*
+![Screenshot1](<img width="1916" height="970" alt="Screenshot 2026-09-12 085546" src="https://github.com/user-attachments/assets/edc646bc-7bec-4a27-b469-bcdda4829706" />
+)
 
-![Screenshot2](Add screenshot 2 here with proper name)
-*Add caption explaining what this shows*
+![Screenshot2](<img width="1657" height="822" alt="Screenshot 2026-09-12 085802" src="https://github.com/user-attachments/assets/65ba6953-b33d-4cac-bae1-c605cff5c505" />
+)
 
-![Screenshot3](Add screenshot 3 here with proper name)
-*Add caption explaining what this shows*
+![Screenshot3](<img width="1701" height="787" alt="Screenshot 2026-09-12 085842" src="https://github.com/user-attachments/assets/3351c9b1-d4ee-45e3-ad1a-a2902bcd8767" />
+)
 
-# Diagrams
-![Workflow](Add your workflow/architecture diagram here)
-*Add caption explaining your workflow*
 
-For Hardware:
 
-# Schematic & Circuit
-![Circuit](Add your circuit diagram here)
-*Add caption explaining connections*
-
-![Schematic](Add your schematic diagram here)
-*Add caption explaining the schematic*
-
-# Build Photos
-![Components](Add photo of your components here)
-*List out all components shown*
-
-![Build](Add photos of build process here)
-*Explain the build steps*
-
-![Final](Add photo of final product here)
-*Explain the final build*
 
 ### Project Demo
 # Video
-[Add your demo video link here]
+[https://drive.google.com/file/d/1Kul-JDMmuZfNi5IRigCcrdQnT8N4uirm/view?usp=sharing]
 *Explain what the video demonstrates*
 
-# Additional Demos
-[Add any extra demo materials/links]
+
 
 ## Team Contributions
-- [Name 1]: [Specific contributions]
-- [Name 2]: [Specific contributions]
-- [Name 3]: [Specific contributions]
+- [Advaith V Anand]: [Backend]
+- [Sreeram S Menon]: [Frontend]
 
 ---
 Made with ❤️ at TinkerHub Useless Projects 
