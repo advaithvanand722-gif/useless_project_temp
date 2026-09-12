@@ -49,8 +49,8 @@ For Software:
 
 
 ## Team Contributions
-- [Advaith V Anand]: [Backend]
-- [Sreeram S Menon]: [Frontend]
+- [Advaith V Anand]: Backend
+- [Sreeram S Menon]: Frontend
 
 ---
 Made with ❤️ at TinkerHub Useless Projects 
