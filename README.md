@@ -6,13 +6,12 @@
 
 
 ## Basic Details
-### Team Name: [Name]
+### Team Name: [Udayipp]
 
 
 ### Team Members
-- Team Lead: [Name] - [College]
-- Member 2: [Name] - [College]
-- Member 3: [Name] - [College]
+- Team Lead:[Advaith V Anand] - [Government Engineering College,Thrissur]
+- Member 2: [Sreeram S Menon] - [Government Engineering College,Thrissur]
 
 ### Project Description
 [2-3 lines about what your project does]
