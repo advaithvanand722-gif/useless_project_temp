@@ -1,1 +1,764 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sneeze-Deflector // Project Dossier & Launch Terminal</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;800;900&family=Rajdhani:wght@500;600;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-dark: #070a10;
+      --panel-bg: rgba(15, 23, 42, 0.75);
+      --panel-border: rgba(0, 240, 255, 0.2);
+      --neon-cyan: #00f0ff;
+      --neon-green: #00ffcc;
+      --neon-amber: #ffbb00;
+      --neon-red: #ff0055;
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+      --font-display: 'Orbitron', sans-serif;
+      --font-body: 'Rajdhani', sans-serif;
+      --font-mono: 'Share Tech Mono', monospace;
+    }
 
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body.cockpit-theme {
+      background-color: var(--bg-dark);
+      background-image: 
+        radial-gradient(circle at 50% 20%, rgba(0, 240, 255, 0.08) 0%, transparent 60%),
+        linear-gradient(to bottom, rgba(7, 10, 16, 0.95), rgba(15, 23, 42, 0.98)),
+        repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0, 240, 255, 0.02) 2px, rgba(0, 240, 255, 0.02) 4px);
+      color: var(--text-main);
+      font-family: var(--font-body);
+      min-height: 100vh;
+      overflow-x: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* Glassmorphism Panel Base */
+    .glass-panel {
+      background: var(--panel-bg);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid var(--panel-border);
+      border-radius: 12px;
+      box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.5), inset 0 0 0 1px rgba(255, 255, 255, 0.05);
+      transition: border-color 0.2s ease;
+    }
+
+    .glass-panel:hover {
+      border-color: rgba(0, 240, 255, 0.35);
+    }
+
+    /* Layout Container */
+    .landing-wrapper {
+      max-width: 1440px;
+      margin: 0 auto;
+      padding: 16px 24px 60px 24px;
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      gap: 24px;
+    }
+
+    /* Header Nav Bar */
+    .cockpit-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 14px 24px;
+      background: rgba(15, 23, 42, 0.85);
+      border: 1px solid var(--panel-border);
+      border-radius: 10px;
+      position: sticky;
+      top: 16px;
+      z-index: 100;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .status-indicator-dot {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      background-color: var(--neon-green);
+      box-shadow: 0 0 10px var(--neon-green);
+      animation: dotPulse 1.5s infinite;
+    }
+
+    @keyframes dotPulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.4; transform: scale(0.85); }
+    }
+
+    .app-title {
+      font-family: var(--font-display);
+      font-size: 1.4rem;
+      font-weight: 900;
+      letter-spacing: 1.5px;
+    }
+
+    .app-title .highlight {
+      color: var(--neon-cyan);
+      text-shadow: 0 0 10px rgba(0, 240, 255, 0.5);
+    }
+
+    .version-badge {
+      font-family: var(--font-mono);
+      font-size: 0.75rem;
+      background: rgba(0, 240, 255, 0.1);
+      color: var(--neon-cyan);
+      border: 1px solid var(--neon-cyan);
+      padding: 2px 8px;
+      border-radius: 4px;
+    }
+
+    .nav-links {
+      display: flex;
+      gap: 20px;
+      align-items: center;
+    }
+
+    .nav-links a {
+      font-family: var(--font-mono);
+      color: var(--text-muted);
+      text-decoration: none;
+      font-size: 0.85rem;
+      letter-spacing: 1px;
+      transition: color 0.2s ease;
+    }
+
+    .nav-links a:hover {
+      color: var(--neon-cyan);
+    }
+
+    .launch-btn {
+      font-family: var(--font-display);
+      font-size: 0.8rem;
+      font-weight: 700;
+      color: #000;
+      background: linear-gradient(135deg, var(--neon-cyan), var(--neon-green));
+      border: none;
+      padding: 8px 18px;
+      border-radius: 6px;
+      cursor: pointer;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      box-shadow: 0 0 14px rgba(0, 240, 255, 0.3);
+      transition: transform 0.15s ease, box-shadow 0.15s ease;
+    }
+
+    .launch-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 0 22px rgba(0, 240, 255, 0.6);
+    }
+
+    /* Hero Section */
+    .hero-panel {
+      padding: 48px 40px;
+      display: grid;
+      grid-template-columns: 1.2fr 0.8fr;
+      gap: 36px;
+      align-items: center;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .hero-panel::before {
+      content: '';
+      position: absolute;
+      top: -100px;
+      right: -100px;
+      width: 320px;
+      height: 320px;
+      background: radial-gradient(circle, rgba(255, 0, 85, 0.15), transparent 70%);
+      pointer-events: none;
+    }
+
+    .hero-content {
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+      z-index: 2;
+    }
+
+    .tactical-tag {
+      font-family: var(--font-mono);
+      font-size: 0.8rem;
+      color: var(--neon-amber);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      letter-spacing: 1.5px;
+    }
+
+    .hero-title {
+      font-family: var(--font-display);
+      font-size: 3rem;
+      line-height: 1.15;
+      font-weight: 900;
+      letter-spacing: 1px;
+    }
+
+    .hero-title span {
+      background: linear-gradient(135deg, var(--neon-cyan), #fff);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .hero-description {
+      font-size: 1.2rem;
+      line-height: 1.6;
+      color: var(--text-muted);
+      max-width: 620px;
+    }
+
+    .hero-actions {
+      display: flex;
+      gap: 16px;
+      margin-top: 10px;
+    }
+
+    .secondary-btn {
+      font-family: var(--font-display);
+      font-size: 0.85rem;
+      font-weight: 700;
+      color: var(--neon-cyan);
+      background: rgba(0, 240, 255, 0.1);
+      border: 1px solid var(--neon-cyan);
+      padding: 12px 24px;
+      border-radius: 8px;
+      cursor: pointer;
+      text-decoration: none;
+      transition: background 0.2s ease;
+    }
+
+    .secondary-btn:hover {
+      background: rgba(0, 240, 255, 0.25);
+    }
+
+    /* Hero Visual Telemetry Graphic */
+    .hero-preview-hud {
+      padding: 24px;
+      background: rgba(7, 10, 16, 0.8);
+      border: 1px solid rgba(0, 240, 255, 0.25);
+      border-radius: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      box-shadow: 0 0 30px rgba(0, 0, 0, 0.8);
+      position: relative;
+    }
+
+    .hud-header-bar {
+      display: flex;
+      justify-content: space-between;
+      font-family: var(--font-mono);
+      font-size: 0.75rem;
+      border-bottom: 1px solid rgba(0, 240, 255, 0.15);
+      padding-bottom: 8px;
+    }
+
+    .simulated-reticle-box {
+      height: 200px;
+      border: 1px dashed rgba(0, 240, 255, 0.3);
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      background: radial-gradient(circle, rgba(0, 240, 255, 0.05), transparent 70%);
+      border-radius: 8px;
+    }
+
+    .sim-tag {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      font-family: var(--font-mono);
+      font-size: 0.7rem;
+      color: var(--neon-cyan);
+    }
+
+    .sim-threat-alert {
+      font-family: var(--font-display);
+      font-size: 1.1rem;
+      color: var(--neon-red);
+      letter-spacing: 1px;
+      text-align: center;
+      animation: alertBlink 0.8s infinite alternate;
+    }
+
+    @keyframes alertBlink {
+      from { opacity: 0.6; }
+      to { opacity: 1; text-shadow: 0 0 14px var(--neon-red); }
+    }
+
+    .sim-sub {
+      font-family: var(--font-mono);
+      font-size: 0.75rem;
+      color: var(--neon-green);
+      margin-top: 6px;
+    }
+
+    /* Section Panels */
+    .panel-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 16px 20px;
+      border-bottom: 1px solid rgba(0, 240, 255, 0.12);
+    }
+
+    .panel-title {
+      font-family: var(--font-display);
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: var(--neon-cyan);
+      letter-spacing: 1px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .tag-badge {
+      font-family: var(--font-mono);
+      font-size: 0.75rem;
+      background: rgba(0, 255, 204, 0.15);
+      color: var(--neon-green);
+      border: 1px solid var(--neon-green);
+      padding: 2px 8px;
+      border-radius: 4px;
+    }
+
+    .panel-body {
+      padding: 24px;
+    }
+
+    /* 3-Column Feature Matrix */
+    .grid-3-col {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 20px;
+    }
+
+    @media (max-width: 992px) {
+      .hero-panel { grid-template-columns: 1fr; }
+      .grid-3-col { grid-template-columns: 1fr; }
+    }
+
+    .feature-card {
+      background: rgba(7, 10, 16, 0.5);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 10px;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      transition: transform 0.2s ease, border-color 0.2s ease;
+    }
+
+    .feature-card:hover {
+      transform: translateY(-4px);
+      border-color: var(--neon-cyan);
+    }
+
+    .feature-icon {
+      font-size: 1.8rem;
+    }
+
+    .feature-name {
+      font-family: var(--font-display);
+      font-size: 1.05rem;
+      color: var(--neon-cyan);
+    }
+
+    .feature-desc {
+      font-size: 0.95rem;
+      line-height: 1.5;
+      color: var(--text-muted);
+    }
+
+    .feature-meta {
+      font-family: var(--font-mono);
+      font-size: 0.75rem;
+      color: var(--neon-amber);
+      margin-top: auto;
+    }
+
+    /* Marketing & GTM Grid */
+    .market-grid {
+      display: grid;
+      grid-template-columns: 1.2fr 1fr;
+      gap: 20px;
+    }
+
+    @media (max-width: 900px) {
+      .market-grid { grid-template-columns: 1fr; }
+    }
+
+    .strategy-item {
+      display: flex;
+      gap: 16px;
+      margin-bottom: 20px;
+    }
+
+    .strategy-num {
+      font-family: var(--font-display);
+      font-size: 1.2rem;
+      font-weight: 900;
+      color: var(--neon-cyan);
+      background: rgba(0, 240, 255, 0.1);
+      border: 1px solid var(--neon-cyan);
+      width: 40px;
+      height: 40px;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .strategy-text h4 {
+      font-family: var(--font-display);
+      font-size: 1rem;
+      margin-bottom: 4px;
+      color: #fff;
+    }
+
+    .strategy-text p {
+      font-size: 0.9rem;
+      color: var(--text-muted);
+      line-height: 1.4;
+    }
+
+    .kpi-card-col {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .kpi-card {
+      background: rgba(0, 0, 0, 0.4);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 8px;
+      padding: 16px;
+    }
+
+    .kpi-val {
+      font-family: var(--font-display);
+      font-size: 1.8rem;
+      font-weight: 800;
+      color: var(--neon-green);
+    }
+
+    .kpi-label {
+      font-family: var(--font-mono);
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      letter-spacing: 1px;
+    }
+
+    /* Team & Credits Section */
+    .crew-section {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 20px;
+    }
+
+    @media (max-width: 640px) {
+      .crew-section { grid-template-columns: 1fr; }
+    }
+
+    .profile-card {
+      background: rgba(0, 0, 0, 0.35);
+      border: 1px solid rgba(0, 240, 255, 0.15);
+      border-radius: 10px;
+      padding: 20px;
+      display: flex;
+      align-items: center;
+      gap: 18px;
+    }
+
+    .profile-avatar {
+      width: 60px;
+      height: 60px;
+      border-radius: 50%;
+      border: 2px solid var(--neon-cyan);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: var(--font-display);
+      font-size: 1.2rem;
+      font-weight: 900;
+      color: var(--neon-cyan);
+      background: rgba(0, 240, 255, 0.08);
+      box-shadow: 0 0 12px rgba(0, 240, 255, 0.3);
+      flex-shrink: 0;
+    }
+
+    .profile-info {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .profile-role {
+      font-family: var(--font-mono);
+      font-size: 0.75rem;
+      color: var(--neon-amber);
+      letter-spacing: 1px;
+    }
+
+    .profile-name {
+      font-family: var(--font-display);
+      font-size: 1.2rem;
+      font-weight: 700;
+      color: #fff;
+    }
+
+    .profile-team {
+      font-family: var(--font-mono);
+      font-size: 0.8rem;
+      color: var(--neon-cyan);
+    }
+
+    /* Footer */
+    .cockpit-footer {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 20px;
+      border-top: 1px solid rgba(0, 240, 255, 0.1);
+      font-family: var(--font-mono);
+      font-size: 0.8rem;
+      color: var(--text-muted);
+    }
+
+    .terminal-link {
+      color: var(--neon-cyan);
+      text-decoration: none;
+    }
+
+    .terminal-link:hover {
+      text-decoration: underline;
+    }
+  </style>
+</head>
+<body class="cockpit-theme">
+
+  <div class="landing-wrapper">
+
+    <!-- Header Navigation -->
+    <header class="cockpit-header">
+      <div class="brand">
+        <div class="status-indicator-dot"></div>
+        <h1 class="app-title">SNEEZE<span class="highlight">-DEFLECTOR</span></h1>
+        <span class="version-badge">BY UDAYIPP</span>
+      </div>
+
+      <nav class="nav-links">
+        <a href="#overview">// OVERVIEW</a>
+        <a href="#mechanics">// BIOMETRICS</a>
+        <a href="#gtm">// MARKET STRATEGY</a>
+        <a href="#team">// CREW</a>
+        <a href="sneeze_deflector.html" class="launch-btn">
+          <span>⚡ LIVE SYSTEM HUD</span>
+        </a>
+      </nav>
+    </header>
+
+    <!-- Hero Section -->
+    <section class="hero-panel glass-panel">
+      <div class="hero-content">
+        <div class="tactical-tag">
+          <span>⚡</span> AUTONOMOUS NEUROMUSCULAR REFLEX INTERRUPT SYSTEM
+        </div>
+        <h2 class="hero-title">DEFLECT SNEEZES BEFORE <span>THEY DETONATE.</span></h2>
+        <p class="hero-description">
+          An AI-powered pre-sneeze deflection platform that tracks microscopic involuntary facial kinematics via real-time computer vision and synthesizes an instant acoustic countermeasure to abort sneeze spasms on command.
+        </p>
+        <div class="hero-actions">
+          <a href="sneeze_deflector.html" class="launch-btn" style="padding: 14px 28px; font-size: 0.95rem;">
+            <span>INITIALIZE COCKPIT HUD</span>
+          </a>
+          <a href="#overview" class="secondary-btn">PROJECT DOSSIER</a>
+        </div>
+      </div>
+
+      <div class="hero-preview-hud">
+        <div class="hud-header-bar">
+          <span style="color: var(--neon-cyan);">LIVE SIMULATION TELEMETRY</span>
+          <span style="color: var(--neon-green);">AI ENGINE: ACTIVE</span>
+        </div>
+        <div class="simulated-reticle-box">
+          <span class="sim-tag">[RETICLE LOCK: CRANIAL-01]</span>
+          <div class="sim-threat-alert">⚠️ REFLEX CONTRACTION DETECTED</div>
+          <div class="sim-sub">TRIGGERING ACOUSTIC INTERRUPT SHOCKWAVE</div>
+        </div>
+        <div style="display: flex; justify-content: space-between; font-family: var(--font-mono); font-size: 0.8rem;">
+          <span style="color: var(--text-muted);">LATENCY: <strong style="color: var(--neon-cyan);">&lt;14ms</strong></span>
+          <span style="color: var(--text-muted);">DEFLECTION SUCCESS: <strong style="color: var(--neon-green);">94.8%</strong></span>
+        </div>
+      </div>
+    </section>
+
+    <!-- Project Overview Section -->
+    <section id="overview" class="glass-panel">
+      <div class="panel-header">
+        <div class="panel-title"><span class="icon">🔬</span> SHORT PROJECT OVERVIEW</div>
+        <span class="tag-badge">SPECIFICATION MATRIX</span>
+      </div>
+      <div class="panel-body">
+        <div class="grid-3-col">
+          <div class="feature-card">
+            <div class="feature-icon">👁️</div>
+            <h3 class="feature-name">Biometric Facial Mesh</h3>
+            <p class="feature-desc">
+              Leverages browser-side MediaPipe landmark inference to observe sub-millimeter shifts across Eye Aspect Ratio (EAR), Nose Scrunch Index, and Mouth Aspect Ratio (MAR).
+            </p>
+            <span class="feature-meta">468 Facial Landmarks • 60 FPS</span>
+          </div>
+
+          <div class="feature-card">
+            <div class="feature-icon">⚡</div>
+            <h3 class="feature-name">Pre-Sneeze Reflex Interrupt</h3>
+            <p class="feature-desc">
+              Sneezing follows an involuntary neurological reflex arc preceded by distinct facial convulsions. Sneeze-Deflector detects this signature build-up before involuntary expulsion occurs.
+            </p>
+            <span class="feature-meta">Threshold Engine: Adaptive EMA</span>
+          </div>
+
+          <div class="feature-card">
+            <div class="feature-icon">🎺</div>
+            <h3 class="feature-name">Web Audio Acoustic Deterrent</h3>
+            <p class="feature-desc">
+              Synthesizes a sudden multi-oscillator stadium horn via client-side Web Audio API. The sudden auditory stimulus triggers an orienting reflex that safely resets the respiratory spasm.
+            </p>
+            <span class="feature-meta">Polyphonic Sawtooth/Square Synthesis</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Marketing & Go-To-Market Information -->
+    <section id="gtm" class="glass-panel">
+      <div class="panel-header">
+        <div class="panel-title"><span class="icon">📈</span> MARKETING STRATEGY & ROADMAP</div>
+        <span class="tag-badge">MARKET DISRUPTION</span>
+      </div>
+      <div class="panel-body">
+        <div class="market-grid">
+          <div>
+            <div class="strategy-item">
+              <div class="strategy-num">01</div>
+              <div class="strategy-text">
+                <h4>Viral Content & Social Demonstration</h4>
+                <p>
+                  Deploy short-form video clips on TikTok, YouTube Shorts, and Instagram demonstrating real users getting their sneezes halted mid-flight by sudden airhorns. The immediate shock value and comedic relief drive viral sharing and user acquisition.
+                </p>
+              </div>
+            </div>
+
+            <div class="strategy-item">
+              <div class="strategy-num">02</div>
+              <div class="strategy-text">
+                <h4>High-Stakes Focus Mode (B2B / Remote Workers)</h4>
+                <p>
+                  Marketed as a zero-installation productivity utility for keynotes, live esports streamers, podcast hosts, and virtual interviewees who cannot afford a sudden loud sneeze during mission-critical presentations.
+                </p>
+              </div>
+            </div>
+
+            <div class="strategy-item">
+              <div class="strategy-num">03</div>
+              <div class="strategy-text">
+                <h4>Open Edge AI Tech Community Growth</h4>
+                <p>
+                  Promote the project across Hacker News, GitHub, and Product Hunt highlighting the 100% private, client-side, zero-server-data-collection implementation powered entirely by modern browser WebAssembly.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div class="kpi-card-col">
+            <div class="kpi-card">
+              <div class="kpi-val">100%</div>
+              <div class="kpi-label">PRIVACY GUARANTEED • ZERO SERVER UPLOAD</div>
+            </div>
+            <div class="kpi-card">
+              <div class="kpi-val">&lt; 15ms</div>
+              <div class="kpi-label">EDGE DETECTION TO SOUNDWAVE LATENCY</div>
+            </div>
+            <div class="kpi-card">
+              <div class="kpi-val">90M+</div>
+              <div class="kpi-label">ANNUAL ALLERGY SUFFERERS ADDRESSABLE MARKET</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Project Credits & Team Info -->
+    <section id="team" class="glass-panel">
+      <div class="panel-header">
+        <div class="panel-title"><span class="icon">🛡️</span> MISSION LEADERSHIP & ARCHITECTS</div>
+        <span class="tag-badge">TEAM UDAYIPP</span>
+      </div>
+      <div class="panel-body">
+        <div class="crew-section">
+          <!-- Team Lead -->
+          <div class="profile-card">
+            <div class="profile-avatar">AV</div>
+            <div class="profile-info">
+              <span class="profile-role">TEAM LEAD</span>
+              <h3 class="profile-name">Advaith V Anand</h3>
+              <span class="profile-team">Team Udayipp • Core Architecture & Vision</span>
+            </div>
+          </div>
+
+          <!-- Co-Lead -->
+          <div class="profile-card">
+            <div class="profile-avatar">SM</div>
+            <div class="profile-info">
+              <span class="profile-role">CO-LEAD</span>
+              <h3 class="profile-name">Sreeram S Menon</h3>
+              <span class="profile-team">Team Udayipp • Signal Processing & Biometrics</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="cockpit-footer">
+      <div>
+        <span>PROJECT: <strong>SNEEZE-DEFLECTOR</strong></span> • 
+        <span>SQUAD: <strong>TEAM UDAYIPP</strong></span>
+      </div>
+      <div>
+        <span>DEPLOYED AS STANDALONE BROWSER EDGE APPLICATION</span>
+      </div>
+      <div>
+        <a href="sneeze_deflector.html" class="terminal-link">ENTER STANDALONE COCKPIT HUD &gt;&gt;</a>
+      </div>
+    </footer>
+
+  </div>
+
+</body>
+</html>

@@ -1,0 +1,1678 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>The Sneeze Deflector - Standalone Cockpit HUD</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;800;900&family=Rajdhani:wght@500;600;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-dark: #070a10;
+      --panel-bg: rgba(15, 23, 42, 0.75);
+      --panel-border: rgba(0, 240, 255, 0.2);
+      --neon-cyan: #00f0ff;
+      --neon-green: #00ffcc;
+      --neon-amber: #ffbb00;
+      --neon-red: #ff0055;
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+      --font-display: 'Orbitron', sans-serif;
+      --font-body: 'Rajdhani', sans-serif;
+      --font-mono: 'Share Tech Mono', monospace;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body.cockpit-theme {
+      background-color: var(--bg-dark);
+      background-image: 
+        radial-gradient(circle at 50% 30%, rgba(0, 240, 255, 0.05) 0%, transparent 60%),
+        linear-gradient(to bottom, rgba(7, 10, 16, 0.95), rgba(15, 23, 42, 0.98)),
+        repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0, 240, 255, 0.02) 2px, rgba(0, 240, 255, 0.02) 4px);
+      color: var(--text-main);
+      font-family: var(--font-body);
+      min-height: 100vh;
+      overflow-x: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* Glassmorphism Panel Base */
+    .glass-panel {
+      background: var(--panel-bg);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid var(--panel-border);
+      border-radius: 12px;
+      box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.5), inset 0 0 0 1px rgba(255, 255, 255, 0.05);
+    }
+
+    /* 500ms High-Contrast Visual Warning Strobe Overlay */
+    .warning-strobe-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      z-index: 9999;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      pointer-events: none;
+      background-color: rgba(255, 0, 85, 0.9);
+      animation: strobeFlash 0.1s infinite alternate;
+    }
+
+    .warning-strobe-overlay.hidden {
+      display: none !important;
+    }
+
+    @keyframes strobeFlash {
+      0% { background-color: rgba(255, 0, 85, 0.92); }
+      100% { background-color: rgba(255, 230, 0, 0.95); }
+    }
+
+    .warning-content {
+      position: relative;
+      z-index: 2;
+      background: rgba(0, 0, 0, 0.9);
+      border: 4px solid #fff;
+      padding: 36px 54px;
+      border-radius: 16px;
+      box-shadow: 0 0 60px #ff0055;
+      animation: alertPulse 0.15s infinite alternate;
+    }
+
+    @keyframes alertPulse {
+      0% { transform: scale(0.97); }
+      100% { transform: scale(1.03); }
+    }
+
+    .warning-icon {
+      font-family: var(--font-display);
+      font-size: 1.1rem;
+      color: var(--neon-amber);
+      margin-bottom: 8px;
+      letter-spacing: 2px;
+    }
+
+    .warning-title {
+      font-family: var(--font-display);
+      font-size: 2.8rem;
+      color: #fff;
+      text-shadow: 0 0 20px #ff0055, 0 0 40px #ff0055;
+      letter-spacing: 2px;
+      margin-bottom: 10px;
+    }
+
+    .warning-sub {
+      font-family: var(--font-mono);
+      font-size: 1.1rem;
+      color: #00ffcc;
+      letter-spacing: 1px;
+    }
+
+    /* Dashboard Wrapper */
+    .dashboard-wrapper {
+      max-width: 1440px;
+      margin: 0 auto;
+      padding: 16px 24px;
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      flex: 1;
+    }
+
+    /* Header Bar */
+    .cockpit-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 20px;
+      background: rgba(15, 23, 42, 0.8);
+      border: 1px solid var(--panel-border);
+      border-radius: 10px;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .status-indicator-dot {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      background-color: var(--neon-green);
+      box-shadow: 0 0 10px var(--neon-green);
+    }
+
+    .status-indicator-dot.pulsating {
+      animation: dotPulse 1.5s infinite;
+    }
+
+    @keyframes dotPulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.4; transform: scale(0.85); }
+    }
+
+    .app-title {
+      font-family: var(--font-display);
+      font-size: 1.5rem;
+      font-weight: 900;
+      letter-spacing: 1.5px;
+    }
+
+    .app-title .highlight {
+      color: var(--neon-cyan);
+      text-shadow: 0 0 10px rgba(0, 240, 255, 0.5);
+    }
+
+    .version-badge {
+      font-family: var(--font-mono);
+      font-size: 0.75rem;
+      background: rgba(0, 240, 255, 0.1);
+      color: var(--neon-cyan);
+      border: 1px solid var(--neon-cyan);
+      padding: 2px 8px;
+      border-radius: 4px;
+    }
+
+    .header-telemetry {
+      display: flex;
+      gap: 16px;
+    }
+
+    .telemetry-pill {
+      font-family: var(--font-mono);
+      font-size: 0.85rem;
+      background: rgba(0, 0, 0, 0.4);
+      padding: 6px 12px;
+      border-radius: 6px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .telemetry-pill .label {
+      color: var(--text-muted);
+      margin-right: 6px;
+    }
+
+    .telemetry-pill .val {
+      color: var(--neon-cyan);
+      font-weight: 700;
+    }
+
+    .telemetry-pill .val.warning {
+      color: var(--neon-amber);
+    }
+
+    /* Cockpit Main Grid */
+    .cockpit-grid {
+      display: grid;
+      grid-template-columns: 1fr 420px;
+      gap: 16px;
+    }
+
+    @media (max-width: 1024px) {
+      .cockpit-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    /* Panel Header */
+    .panel-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 16px;
+      border-bottom: 1px solid rgba(0, 240, 255, 0.1);
+    }
+
+    .panel-title {
+      font-family: var(--font-display);
+      font-size: 0.95rem;
+      font-weight: 700;
+      color: var(--neon-cyan);
+      letter-spacing: 1px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .camera-mode-badge, .live-tag, .log-count-badge {
+      font-family: var(--font-mono);
+      font-size: 0.75rem;
+      background: rgba(0, 255, 204, 0.15);
+      color: var(--neon-green);
+      border: 1px solid var(--neon-green);
+      padding: 2px 8px;
+      border-radius: 4px;
+    }
+
+    /* Viewport Card */
+    .viewport-card {
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    .viewport-container {
+      position: relative;
+      width: 100%;
+      aspect-ratio: 16 / 9;
+      background: #000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+    }
+
+    #outputCanvas {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      z-index: 2;
+    }
+
+    /* Reticle Overlay */
+    .reticle-overlay {
+      position: absolute;
+      inset: 12px;
+      pointer-events: none;
+      z-index: 3;
+    }
+
+    .corner-bracket {
+      position: absolute;
+      width: 24px;
+      height: 24px;
+      border: 2px solid var(--neon-cyan);
+    }
+
+    .corner-bracket.top-left { top: 0; left: 0; border-right: none; border-bottom: none; }
+    .corner-bracket.top-right { top: 0; right: 0; border-left: none; border-bottom: none; }
+    .corner-bracket.bottom-left { bottom: 0; left: 0; border-right: none; border-top: none; }
+    .corner-bracket.bottom-right { bottom: 0; right: 0; border-left: none; border-top: none; }
+
+    .center-crosshair {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 16px;
+      height: 16px;
+      transform: translate(-50%, -50%);
+      border: 1px dashed rgba(0, 240, 255, 0.4);
+      border-radius: 50%;
+    }
+
+    /* Start Cam Overlay */
+    .start-overlay {
+      position: absolute;
+      inset: 0;
+      z-index: 10;
+      background: rgba(7, 10, 16, 0.94);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 24px;
+    }
+
+    .start-content {
+      max-width: 440px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .radar-ping {
+      width: 60px;
+      height: 60px;
+      border-radius: 50%;
+      border: 2px solid var(--neon-cyan);
+      box-shadow: 0 0 20px var(--neon-cyan);
+      animation: ping 2s cubic-bezier(0, 0, 0.2, 1) infinite;
+    }
+
+    @keyframes ping {
+      75%, 100% { transform: scale(1.6); opacity: 0; }
+    }
+
+    .start-content h2 {
+      font-family: var(--font-display);
+      font-size: 1.3rem;
+      color: var(--neon-cyan);
+    }
+
+    .start-content p {
+      font-size: 0.95rem;
+      color: var(--text-muted);
+    }
+
+    .primary-btn {
+      font-family: var(--font-display);
+      font-size: 1rem;
+      font-weight: 700;
+      color: #000;
+      background: linear-gradient(135deg, var(--neon-cyan), var(--neon-green));
+      border: none;
+      padding: 14px 28px;
+      border-radius: 8px;
+      cursor: pointer;
+      box-shadow: 0 0 20px rgba(0, 240, 255, 0.4);
+      transition: transform 0.15s ease, box-shadow 0.15s ease;
+    }
+
+    .primary-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 0 30px rgba(0, 240, 255, 0.7);
+    }
+
+    /* Waveform Telemetry Chart */
+    .chart-container {
+      padding: 12px;
+      background: rgba(0, 0, 0, 0.4);
+      border-top: 1px solid rgba(0, 240, 255, 0.1);
+    }
+
+    .chart-label {
+      font-family: var(--font-mono);
+      font-size: 0.7rem;
+      color: var(--text-muted);
+      margin-bottom: 6px;
+      letter-spacing: 1px;
+    }
+
+    #probabilityChartCanvas {
+      width: 100%;
+      display: block;
+    }
+
+    /* Diagnostics HUD Panel */
+    .hud-panel {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      padding-bottom: 16px;
+    }
+
+    /* SVG Gauge */
+    .gauge-card {
+      padding: 16px;
+      background: rgba(0, 0, 0, 0.3);
+      border-radius: 10px;
+      border: 1px solid rgba(0, 240, 255, 0.15);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .gauge-title {
+      font-family: var(--font-display);
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      margin-bottom: 8px;
+      letter-spacing: 1px;
+    }
+
+    .svg-gauge-wrapper {
+      width: 220px;
+    }
+
+    .gauge-svg {
+      width: 100%;
+      overflow: visible;
+    }
+
+    .gauge-bg {
+      stroke: rgba(255, 255, 255, 0.1);
+      stroke-linecap: round;
+    }
+
+    .gauge-threshold-arc {
+      stroke: rgba(255, 0, 85, 0.3);
+      stroke-dasharray: 500;
+      stroke-dashoffset: 125;
+      stroke-linecap: round;
+    }
+
+    .gauge-val-arc {
+      stroke: var(--neon-cyan);
+      stroke-dasharray: 500;
+      stroke-dashoffset: 500;
+      stroke-linecap: round;
+      transition: stroke-dashoffset 0.1s linear, stroke 0.2s ease;
+      filter: drop-shadow(0 0 6px var(--neon-cyan));
+    }
+
+    .gauge-num {
+      font-family: var(--font-display);
+      font-size: 2.2rem;
+      font-weight: 900;
+      fill: var(--text-main);
+      text-anchor: middle;
+    }
+
+    .gauge-sub {
+      font-family: var(--font-mono);
+      font-size: 0.75rem;
+      fill: var(--neon-green);
+      text-anchor: middle;
+      letter-spacing: 1px;
+    }
+
+    .gauge-threshold-info {
+      font-family: var(--font-mono);
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      margin-top: 4px;
+    }
+
+    .gauge-threshold-info strong {
+      color: var(--neon-amber);
+    }
+
+    /* Biometric Metrics Grid */
+    .metrics-grid {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      padding: 0 16px;
+    }
+
+    .metric-card {
+      background: rgba(0, 0, 0, 0.4);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      padding: 10px 14px;
+      border-radius: 8px;
+    }
+
+    .metric-header {
+      display: flex;
+      justify-content: space-between;
+      font-family: var(--font-mono);
+      font-size: 0.85rem;
+      margin-bottom: 6px;
+    }
+
+    .metric-name {
+      color: var(--text-muted);
+    }
+
+    .metric-val {
+      color: var(--neon-cyan);
+      font-weight: 700;
+    }
+
+    .metric-bar-bg {
+      width: 100%;
+      height: 6px;
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 3px;
+      overflow: hidden;
+      margin-bottom: 6px;
+    }
+
+    .metric-bar-fill {
+      height: 100%;
+      background: linear-gradient(90deg, var(--neon-cyan), var(--neon-green));
+      border-radius: 3px;
+      transition: width 0.1s ease;
+    }
+
+    .metric-footer {
+      display: flex;
+      justify-content: space-between;
+      font-family: var(--font-mono);
+      font-size: 0.75rem;
+      color: var(--text-muted);
+    }
+
+    /* Controls Card */
+    .controls-card {
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      background: rgba(0, 0, 0, 0.3);
+      border-radius: 10px;
+      margin: 0 16px;
+      border: 1px solid rgba(0, 240, 255, 0.1);
+    }
+
+    .controls-title {
+      font-family: var(--font-display);
+      font-size: 0.85rem;
+      color: var(--neon-cyan);
+      letter-spacing: 1px;
+    }
+
+    .control-group {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .control-label-row {
+      display: flex;
+      justify-content: space-between;
+      font-family: var(--font-mono);
+      font-size: 0.8rem;
+      color: var(--text-muted);
+    }
+
+    .control-val-badge {
+      color: var(--neon-cyan);
+      font-weight: 700;
+    }
+
+    /* Cyber Slider */
+    .cyber-slider {
+      -webkit-appearance: none;
+      width: 100%;
+      height: 6px;
+      background: rgba(255, 255, 255, 0.15);
+      border-radius: 3px;
+      outline: none;
+    }
+
+    .cyber-slider::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      background: var(--neon-cyan);
+      box-shadow: 0 0 10px var(--neon-cyan);
+      cursor: pointer;
+      transition: transform 0.1s ease;
+    }
+
+    .cyber-slider::-webkit-slider-thumb:hover {
+      transform: scale(1.25);
+    }
+
+    /* Action Buttons Row */
+    .action-buttons-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+
+    .cyber-btn {
+      font-family: var(--font-display);
+      font-size: 0.75rem;
+      font-weight: 700;
+      padding: 10px 12px;
+      border-radius: 6px;
+      border: none;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      transition: background 0.2s ease, transform 0.1s ease;
+    }
+
+    .cyber-btn.secondary {
+      background: rgba(0, 240, 255, 0.15);
+      color: var(--neon-cyan);
+      border: 1px solid var(--neon-cyan);
+    }
+
+    .cyber-btn.secondary:hover {
+      background: rgba(0, 240, 255, 0.3);
+      transform: translateY(-1px);
+    }
+
+    .cyber-btn.danger {
+      background: rgba(255, 0, 85, 0.2);
+      color: var(--neon-red);
+      border: 1px solid var(--neon-red);
+    }
+
+    .cyber-btn.danger:hover {
+      background: rgba(255, 0, 85, 0.4);
+      transform: translateY(-1px);
+    }
+
+    /* Calibration Progress Container */
+    .calibration-bar-container {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .calibration-bar-container.hidden {
+      display: none;
+    }
+
+    .cal-status-label {
+      font-family: var(--font-mono);
+      font-size: 0.75rem;
+      color: var(--neon-amber);
+      text-align: center;
+    }
+
+    .cal-track {
+      width: 100%;
+      height: 8px;
+      background: rgba(0, 0, 0, 0.5);
+      border-radius: 4px;
+      border: 1px solid var(--neon-amber);
+      overflow: hidden;
+    }
+
+    .cal-fill {
+      height: 100%;
+      background: linear-gradient(90deg, #ffbb00, #00ffcc);
+      transition: width 0.1s linear;
+    }
+
+    /* Bottom Section: Sneeze Interceptions Log Table */
+    .interceptions-log-card {
+      display: flex;
+      flex-direction: column;
+      margin-top: 8px;
+      overflow: hidden;
+    }
+
+    .table-scroll-container {
+      max-height: 220px;
+      overflow-y: auto;
+    }
+
+    .interceptions-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-family: var(--font-mono);
+      font-size: 0.85rem;
+      text-align: left;
+    }
+
+    .interceptions-table th {
+      background: rgba(0, 240, 255, 0.08);
+      color: var(--neon-cyan);
+      padding: 10px 16px;
+      font-size: 0.75rem;
+      letter-spacing: 1px;
+      border-bottom: 1px solid rgba(0, 240, 255, 0.15);
+      position: sticky;
+      top: 0;
+      z-index: 2;
+    }
+
+    .interceptions-table td {
+      padding: 10px 16px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+      color: var(--text-main);
+    }
+
+    .interceptions-table tr:hover {
+      background: rgba(255, 0, 85, 0.1);
+    }
+
+    .empty-msg {
+      text-align: center;
+      color: var(--text-muted);
+      padding: 24px;
+      font-style: italic;
+    }
+
+    .badge-intercepted {
+      background: rgba(255, 0, 85, 0.2);
+      color: var(--neon-red);
+      border: 1px solid var(--neon-red);
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-size: 0.75rem;
+    }
+  </style>
+</head>
+<body class="cockpit-theme">
+
+  <!-- 500ms High-Contrast Visual Warning Overlay Strobe -->
+  <div id="warning-overlay" class="warning-strobe-overlay hidden">
+    <div class="warning-content">
+      <div class="warning-icon">⚡ SNEEZE INTERRUPT TRIGGERED ⚡</div>
+      <h1 class="warning-title">ACOUSTIC SHOCKWAVE DEPLOYED</h1>
+      <p class="warning-sub">REFLEX DELEVERAGED • INVOLUNTARY SPASM INTERRUPTED</p>
+    </div>
+  </div>
+
+  <div class="dashboard-wrapper">
+    <!-- Header Bar -->
+    <header class="cockpit-header">
+      <div class="brand">
+        <div class="status-indicator-dot pulsating"></div>
+        <h1 class="app-title">THE SNEEZE <span class="highlight">DEFLECTOR</span></h1>
+        <span class="version-badge">STANDALONE HUD</span>
+      </div>
+
+      <div class="header-telemetry">
+        <div class="telemetry-pill">
+          <span class="label">SYS STATUS:</span>
+          <span id="sysStatusText" class="val active">STANDBY</span>
+        </div>
+        <div class="telemetry-pill">
+          <span class="label">FPS:</span>
+          <span id="fpsCounter" class="val">0</span>
+        </div>
+        <div class="telemetry-pill">
+          <span class="label">CALIBRATION:</span>
+          <span id="calStatusText" class="val warning">DEFAULT</span>
+        </div>
+      </div>
+    </header>
+
+    <!-- Main Grid Dashboard -->
+    <main class="cockpit-grid">
+
+      <!-- Center Viewport (Webcam Video + Full-Res Canvas Overlay) -->
+      <section class="viewport-card glass-panel">
+        <div class="panel-header">
+          <div class="panel-title"><span class="icon">📷</span> OPTICAL TELEMETRY FEED</div>
+          <div class="camera-mode-badge" id="cameraStatusBadge">OFFLINE</div>
+        </div>
+
+        <div class="viewport-container" id="viewportContainer">
+          <!-- Hidden Video Element -->
+          <video id="webcamVideo" playsinline autoplay muted style="display:none;"></video>
+
+          <!-- Full-Resolution Render Canvas -->
+          <canvas id="outputCanvas"></canvas>
+
+          <!-- Target Reticle Overlay -->
+          <div class="reticle-overlay">
+            <div class="corner-bracket top-left"></div>
+            <div class="corner-bracket top-right"></div>
+            <div class="corner-bracket bottom-left"></div>
+            <div class="corner-bracket bottom-right"></div>
+            <div class="center-crosshair"></div>
+          </div>
+
+          <!-- Start Camera & Audio Overlay -->
+          <div id="startOverlay" class="start-overlay">
+            <div class="start-content">
+              <div class="radar-ping"></div>
+              <h2>INITIALIZE OPTICAL & AUDIO SENSORS</h2>
+              <p>Click below to grant camera access and activate Web Audio Context for sneeze interruption sound waves.</p>
+              <button id="startCamBtn" class="primary-btn pulse-glow">
+                <span>⚡ START CAMERA & AUDIO</span>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Real-Time Waveform / Threat Chart -->
+        <div class="chart-container">
+          <div class="chart-label">REAL-TIME SNEEZE THREAT SCORE (%) TELEMETRY</div>
+          <canvas id="probabilityChartCanvas" height="60"></canvas>
+        </div>
+      </section>
+
+      <!-- Right Diagnostics HUD Panel -->
+      <aside class="hud-panel glass-panel">
+        <div class="panel-header">
+          <div class="panel-title"><span class="icon">📊</span> DIAGNOSTIC HUD</div>
+          <div class="live-tag">REALTIME</div>
+        </div>
+
+        <!-- Primary Gauge: Sneeze Threat Score -->
+        <div class="gauge-card">
+          <div class="gauge-title">SNEEZE THREAT SCORE</div>
+          
+          <div class="svg-gauge-wrapper">
+            <svg class="gauge-svg" viewBox="0 0 200 120">
+              <!-- Background Arc -->
+              <path class="gauge-bg" d="M 20 100 A 80 80 0 0 1 180 100" fill="none" stroke-width="14"/>
+              <!-- Threshold Arc Indicator -->
+              <path id="thresholdArc" class="gauge-threshold-arc" d="M 20 100 A 80 80 0 0 1 180 100" fill="none" stroke-width="14"/>
+              <!-- Value Arc -->
+              <path id="gaugeValueArc" class="gauge-val-arc" d="M 20 100 A 80 80 0 0 1 180 100" fill="none" stroke-width="14"/>
+              <!-- Center Text -->
+              <text x="100" y="82" class="gauge-num" id="gaugeNumText">0%</text>
+              <text x="100" y="102" class="gauge-sub" id="gaugeStatusSub">STABLE</text>
+            </svg>
+          </div>
+
+          <div class="gauge-threshold-info">
+            <span>TRIGGER THRESHOLD: <strong id="thresholdValText">75%</strong></span>
+          </div>
+        </div>
+
+        <!-- Biometric Ratio Cards -->
+        <div class="metrics-grid">
+
+          <!-- Metric 1: Eye Clench Ratio -->
+          <div class="metric-card" id="cardEAR">
+            <div class="metric-header">
+              <span class="metric-name">EYE CLENCH (EAR)</span>
+              <span class="metric-val" id="valEAR">0.28</span>
+            </div>
+            <div class="metric-bar-bg">
+              <div class="metric-bar-fill" id="barEAR" style="width: 50%;"></div>
+            </div>
+            <div class="metric-footer">
+              <span class="base-label">BASE: <span id="baseEAR">0.28</span></span>
+              <span class="delta-label" id="deltaEAR">0.00</span>
+            </div>
+          </div>
+
+          <!-- Metric 2: Nose Scrunch Index -->
+          <div class="metric-card" id="cardNose">
+            <div class="metric-header">
+              <span class="metric-name">NOSE SCRUNCH INDEX</span>
+              <span class="metric-val" id="valNose">0.35</span>
+            </div>
+            <div class="metric-bar-bg">
+              <div class="metric-bar-fill" id="barNose" style="width: 50%;"></div>
+            </div>
+            <div class="metric-footer">
+              <span class="base-label">BASE: <span id="baseNose">0.35</span></span>
+              <span class="delta-label" id="deltaNose">0.00</span>
+            </div>
+          </div>
+
+          <!-- Metric 3: Mouth Flare Ratio -->
+          <div class="metric-card" id="cardMAR">
+            <div class="metric-header">
+              <span class="metric-name">MOUTH FLARE (MAR)</span>
+              <span class="metric-val" id="valMAR">0.15</span>
+            </div>
+            <div class="metric-bar-bg">
+              <div class="metric-bar-fill" id="barMAR" style="width: 25%;"></div>
+            </div>
+            <div class="metric-footer">
+              <span class="base-label">BASE: <span id="baseMAR">0.15</span></span>
+              <span class="delta-label" id="deltaMAR">0.00</span>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- Interactive Control Station -->
+        <div class="controls-card">
+          <div class="controls-title"><span class="icon">⚙️</span> COCKPIT CONTROLS</div>
+
+          <!-- Sensitivity Slider (0.5x to 2.0x modifier) -->
+          <div class="control-group">
+            <div class="control-label-row">
+              <label for="sensitivitySlider">SENSITIVITY (0.5x - 2.0x):</label>
+              <span class="control-val-badge" id="sensitivityValText">1.2x</span>
+            </div>
+            <input type="range" id="sensitivitySlider" min="0.5" max="2.0" step="0.1" value="1.2" class="cyber-slider">
+          </div>
+
+          <!-- Volume Slider -->
+          <div class="control-group">
+            <div class="control-label-row">
+              <label for="volumeSlider">AUDIO VOLUME:</label>
+              <span class="control-val-badge" id="volumeValText">80%</span>
+            </div>
+            <input type="range" id="volumeSlider" min="0" max="100" step="5" value="80" class="cyber-slider">
+          </div>
+
+          <!-- Action Buttons Grid -->
+          <div class="action-buttons-row">
+            <button id="calibrateBtn" class="cyber-btn secondary">
+              <span class="btn-icon">🎯</span>
+              <span>CALIBRATE FACE</span>
+            </button>
+            <button id="testHornBtn" class="cyber-btn danger">
+              <span class="btn-icon">🎺</span>
+              <span>TEST HORN</span>
+            </button>
+          </div>
+
+          <!-- Calibration Progress Overlay Bar & Countdown -->
+          <div id="calibrationProgressContainer" class="calibration-bar-container hidden">
+            <div class="cal-status-label" id="calProgressText">3-SECOND NEUTRAL FACE COUNTDOWN... KEEP FACE STILL</div>
+            <div class="cal-track">
+              <div id="calFill" class="cal-fill" style="width: 0%;"></div>
+            </div>
+          </div>
+
+        </div>
+
+      </aside>
+    </main>
+
+    <!-- Bottom Section: Sneeze Interceptions Log Table -->
+    <section class="interceptions-log-card glass-panel">
+      <div class="panel-header">
+        <div class="panel-title"><span class="icon">📜</span> SNEEZE INTERCEPTIONS LOG</div>
+        <div class="log-count-badge" id="logCountBadge">0 INTERCEPTIONS</div>
+      </div>
+      <div class="table-scroll-container">
+        <table class="interceptions-table">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>TIMESTAMP</th>
+              <th>SNEEZE THREAT SCORE</th>
+              <th>EYE CLENCH (EAR)</th>
+              <th>NOSE SCRUNCH</th>
+              <th>STATUS</th>
+            </tr>
+          </thead>
+          <tbody id="logTableBody">
+            <tr id="emptyLogPlaceholder">
+              <td colspan="6" class="empty-msg">No sneezes intercepted yet. System actively monitoring biometric telemetry.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+  </div>
+
+  <!-- Standalone ES Module Script (Includes Web Audio API, MediaPipe FaceLandmarker, & Cockpit Logic) -->
+  <script type="module">
+    import { FaceLandmarker, FilesetResolver } from 'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/+esm';
+
+    // ----------------------------------------------------
+    // 1. AirhornSynthesizer (Web Audio API Stadium Airhorn)
+    // ----------------------------------------------------
+    class AirhornSynthesizer {
+      constructor() {
+        this.ctx = null;
+        this.masterVolume = 1.0;
+      }
+
+      init() {
+        if (!this.ctx) {
+          const AudioCtx = window.AudioContext || window.webkitAudioContext;
+          this.ctx = new AudioCtx();
+        }
+        if (this.ctx.state === 'suspended') {
+          this.ctx.resume();
+        }
+      }
+
+      setVolume(volume) {
+        this.masterVolume = Math.max(0, Math.min(1, parseFloat(volume) || 0));
+      }
+
+      _playSingleHonk(startTime, duration, volume) {
+        if (!this.ctx) this.init();
+        if (volume <= 0.001) return;
+
+        const now = startTime;
+        const stopTime = now + duration;
+
+        const chordSpecs = [
+          { freq: 233.08, type: 'sawtooth', detune: -8 },
+          { freq: 293.66, type: 'sawtooth', detune: 10 },
+          { freq: 349.23, type: 'square', detune: -4 },
+          { freq: 466.16, type: 'sawtooth', detune: 14 },
+          { freq: 116.54, type: 'sawtooth', detune: 0 }
+        ];
+
+        const filter = this.ctx.createBiquadFilter();
+        filter.type = 'lowpass';
+        filter.frequency.setValueAtTime(2600, now);
+        filter.Q.setValueAtTime(4.0, now);
+        filter.frequency.exponentialRampToValueAtTime(1600, stopTime);
+
+        const gainNode = this.ctx.createGain();
+        const peakGain = 0.7 * volume;
+
+        gainNode.gain.setValueAtTime(0.0001, now);
+        gainNode.gain.exponentialRampToValueAtTime(peakGain, now + 0.01);
+
+        const releaseDuration = 0.025;
+        const decayStart = Math.max(now + 0.01, stopTime - releaseDuration);
+        gainNode.gain.setValueAtTime(peakGain, decayStart);
+        gainNode.gain.exponentialRampToValueAtTime(0.0001, stopTime);
+
+        filter.connect(gainNode);
+        gainNode.connect(this.ctx.destination);
+
+        chordSpecs.forEach(spec => {
+          const osc = this.ctx.createOscillator();
+          osc.type = spec.type;
+          osc.frequency.setValueAtTime(spec.freq, now);
+          osc.detune.setValueAtTime(spec.detune, now);
+          osc.frequency.exponentialRampToValueAtTime(spec.freq * 0.96, stopTime);
+
+          osc.connect(filter);
+          osc.start(now);
+          osc.stop(stopTime);
+        });
+      }
+
+      playSneezeDeflectorHorn(volume = 1.0) {
+        this.init();
+        if (!this.ctx) return;
+
+        const gainVal = (volume !== undefined ? volume : 1.0) * this.masterVolume;
+        if (gainVal <= 0.001) return;
+
+        const now = this.ctx.currentTime + 0.01;
+        const pattern = [
+          { duration: 0.12, gap: 0.06 },
+          { duration: 0.12, gap: 0.06 },
+          { duration: 0.12, gap: 0.06 },
+          { duration: 0.42, gap: 0.00 }
+        ];
+
+        let cursor = now;
+        pattern.forEach(step => {
+          this._playSingleHonk(cursor, step.duration, gainVal);
+          cursor += step.duration + step.gap;
+        });
+      }
+
+      test() {
+        this.init();
+        if (!this.ctx) return;
+        this._playSingleHonk(this.ctx.currentTime + 0.01, 0.18, this.masterVolume);
+      }
+    }
+
+    // ----------------------------------------------------
+    // 2. SneezeDetector (MediaPipe FaceLandmarker Vision Engine)
+    // ----------------------------------------------------
+    function distance2D(p1, p2) {
+      if (!p1 || !p2) return 0;
+      const dx = p1.x - p2.x;
+      const dy = p1.y - p2.y;
+      return Math.sqrt(dx * dx + dy * dy);
+    }
+
+    class SneezeDetector {
+      constructor() {
+        this.faceLandmarker = null;
+        this.isReady = false;
+
+        this.sneezeCallbacks = [];
+        this.frameUpdateCallbacks = [];
+
+        this.metrics = {
+          ear: 0.28,
+          noseScrunch: 0.35,
+          mar: 0.15,
+          sneezeThreat: 0
+        };
+
+        this.baseline = {
+          ear: 0.28,
+          noseScrunch: 0.35,
+          mar: 0.15
+        };
+
+        this.isCalibrating = false;
+        this.calibrationFrameCount = 0;
+        this.calibrationSamples = [];
+        this.calibrationProgress = 0;
+
+        this.sensitivity = 1.2;
+        this.threshold = 75;
+
+        this.consecutiveTriggerFrames = 0;
+        this.requiredConsecutiveFrames = 3;
+        this.lastTriggerTime = 0;
+        this.cooldownLockoutMs = 4000;
+      }
+
+      onSneezeDetected(callback) {
+        if (typeof callback === 'function') this.sneezeCallbacks.push(callback);
+      }
+
+      onFrameUpdate(callback) {
+        if (typeof callback === 'function') this.frameUpdateCallbacks.push(callback);
+      }
+
+      async init() {
+        try {
+          const filesetResolver = await FilesetResolver.forVisionTasks(
+            'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/wasm'
+          );
+
+          this.faceLandmarker = await FaceLandmarker.createFromOptions(filesetResolver, {
+            baseOptions: {
+              modelAssetPath: 'https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task',
+              delegate: 'GPU'
+            },
+            runningMode: 'VIDEO',
+            numFaces: 1,
+            minFaceDetectionConfidence: 0.5,
+            minFacePresenceConfidence: 0.5,
+            minTrackingConfidence: 0.5
+          });
+
+          this.isReady = true;
+          console.log('SneezeDetector: MediaPipe FaceLandmarker loaded.');
+        } catch (err) {
+          console.warn('GPU delegate failed, using CPU fallback:', err);
+          try {
+            const filesetResolver = await FilesetResolver.forVisionTasks(
+              'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/wasm'
+            );
+            this.faceLandmarker = await FaceLandmarker.createFromOptions(filesetResolver, {
+              baseOptions: {
+                modelAssetPath: 'https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task',
+                delegate: 'CPU'
+              },
+              runningMode: 'VIDEO',
+              numFaces: 1
+            });
+            this.isReady = true;
+          } catch (fallbackErr) {
+            console.error('SneezeDetector Init Failed:', fallbackErr);
+          }
+        }
+      }
+
+      calibrateNeutral(onCompleteCallback) {
+        this.isCalibrating = true;
+        this.calibrationFrameCount = 0;
+        this.calibrationSamples = [];
+        this.calibrationProgress = 0;
+        this.onCalibrationCompleteCallback = onCompleteCallback;
+      }
+
+      processFrame(video, timestamp) {
+        if (!this.isReady || !this.faceLandmarker || !video || video.readyState < 2) return null;
+
+        const results = this.faceLandmarker.detectForVideo(video, timestamp);
+        if (!results || !results.faceLandmarks || results.faceLandmarks.length === 0) return null;
+
+        const lm = results.faceLandmarks[0];
+
+        // 1. EAR
+        const leftV1 = distance2D(lm[160], lm[144]);
+        const leftV2 = distance2D(lm[158], lm[153]);
+        const leftH = distance2D(lm[33], lm[133]);
+        const leftEAR = (leftV1 + leftV2) / (2.0 * Math.max(0.001, leftH));
+
+        const rightV1 = distance2D(lm[385], lm[380]);
+        const rightV2 = distance2D(lm[387], lm[373]);
+        const rightH = distance2D(lm[362], lm[263]);
+        const rightEAR = (rightV1 + rightV2) / (2.0 * Math.max(0.001, rightH));
+
+        const currentEAR = (leftEAR + rightEAR) / 2.0;
+
+        // 2. Nose Scrunch Index
+        const noseToLipDist = distance2D(lm[168], lm[0]);
+        const faceHeight = distance2D(lm[10], lm[152]);
+        const currentNoseScrunch = noseToLipDist / Math.max(0.001, faceHeight);
+
+        // 3. MAR
+        const mouthV = distance2D(lm[13], lm[14]);
+        const mouthH = distance2D(lm[61], lm[291]);
+        const currentMAR = mouthV / Math.max(0.001, mouthH);
+
+        // Smoothing EMA
+        const alpha = 0.35;
+        this.metrics.ear = this.metrics.ear * (1 - alpha) + currentEAR * alpha;
+        this.metrics.noseScrunch = this.metrics.noseScrunch * (1 - alpha) + currentNoseScrunch * alpha;
+        this.metrics.mar = this.metrics.mar * (1 - alpha) + currentMAR * alpha;
+
+        // Calibration 60 frames
+        if (this.isCalibrating) {
+          this.calibrationSamples.push({
+            ear: currentEAR,
+            noseScrunch: currentNoseScrunch,
+            mar: currentMAR
+          });
+          this.calibrationFrameCount++;
+          this.calibrationProgress = Math.min(100, Math.round((this.calibrationFrameCount / 60) * 100));
+
+          if (this.calibrationFrameCount >= 60) {
+            const sum = this.calibrationSamples.reduce(
+              (acc, s) => ({
+                ear: acc.ear + s.ear,
+                noseScrunch: acc.noseScrunch + s.noseScrunch,
+                mar: acc.mar + s.mar
+              }),
+              { ear: 0, noseScrunch: 0, mar: 0 }
+            );
+
+            const n = this.calibrationSamples.length;
+            this.baseline.ear = sum.ear / n;
+            this.baseline.noseScrunch = sum.noseScrunch / n;
+            this.baseline.mar = sum.mar / n;
+
+            this.isCalibrating = false;
+            if (typeof this.onCalibrationCompleteCallback === 'function') {
+              this.onCalibrationCompleteCallback(this.baseline);
+            }
+          }
+        }
+
+        // Threat formula
+        const eyeClenchScore = Math.max(0, (this.baseline.ear - this.metrics.ear) / Math.max(0.01, this.baseline.ear));
+        const noseScrunchScore = Math.max(0, (this.baseline.noseScrunch - this.metrics.noseScrunch) / Math.max(0.01, this.baseline.noseScrunch));
+        const mouthFlareScore = Math.max(0, (this.metrics.mar - this.baseline.mar) / Math.max(0.01, this.baseline.mar));
+
+        const w1 = 0.40;
+        const w2 = 0.35;
+        const w3 = 0.25;
+        const rawThreat = (w1 * eyeClenchScore) + (w2 * noseScrunchScore) + (w3 * Math.min(1.5, mouthFlareScore));
+
+        const targetThreatPct = Math.min(100, Math.max(0, Math.round(rawThreat * 100 * this.sensitivity)));
+        this.metrics.sneezeThreat = Math.round(this.metrics.sneezeThreat * 0.65 + targetThreatPct * 0.35);
+
+        this.frameUpdateCallbacks.forEach(cb => cb(this.metrics, this.baseline));
+
+        // Trigger logic
+        const now = performance.now();
+        const isAboveThreshold = this.metrics.sneezeThreat >= this.threshold;
+        const isInCooldown = (now - this.lastTriggerTime) < this.cooldownLockoutMs;
+
+        if (isAboveThreshold && !isInCooldown && !this.isCalibrating) {
+          this.consecutiveTriggerFrames++;
+          if (this.consecutiveTriggerFrames >= this.requiredConsecutiveFrames) {
+            this.lastTriggerTime = now;
+            this.consecutiveTriggerFrames = 0;
+
+            this.sneezeCallbacks.forEach(cb => cb({
+              threat: this.metrics.sneezeThreat,
+              metrics: this.metrics,
+              timestamp: now
+            }));
+          }
+        } else {
+          this.consecutiveTriggerFrames = 0;
+        }
+
+        return {
+          landmarks: lm,
+          metrics: this.metrics,
+          baseline: this.baseline,
+          isTriggered: (now - this.lastTriggerTime) < 1600,
+          isInCooldown
+        };
+      }
+    }
+
+    // ----------------------------------------------------
+    // 3. Cockpit Main Application Orchestration
+    // ----------------------------------------------------
+    const airhorn = new AirhornSynthesizer();
+    const detector = new SneezeDetector();
+
+    const video = document.getElementById('webcamVideo');
+    const canvas = document.getElementById('outputCanvas');
+    const startOverlay = document.getElementById('startOverlay');
+    const startCamBtn = document.getElementById('startCamBtn');
+    const cameraStatusBadge = document.getElementById('cameraStatusBadge');
+    const sysStatusText = document.getElementById('sysStatusText');
+    const fpsCounter = document.getElementById('fpsCounter');
+    const calStatusText = document.getElementById('calStatusText');
+    const warningOverlay = document.getElementById('warning-overlay');
+
+    const gaugeValueArc = document.getElementById('gaugeValueArc');
+    const gaugeNumText = document.getElementById('gaugeNumText');
+    const gaugeStatusSub = document.getElementById('gaugeStatusSub');
+
+    const valEAR = document.getElementById('valEAR');
+    const barEAR = document.getElementById('barEAR');
+    const baseEAR = document.getElementById('baseEAR');
+    const deltaEAR = document.getElementById('deltaEAR');
+
+    const valNose = document.getElementById('valNose');
+    const barNose = document.getElementById('barNose');
+    const baseNose = document.getElementById('baseNose');
+    const deltaNose = document.getElementById('deltaNose');
+
+    const valMAR = document.getElementById('valMAR');
+    const barMAR = document.getElementById('barMAR');
+    const baseMAR = document.getElementById('baseMAR');
+    const deltaMAR = document.getElementById('deltaMAR');
+
+    const sensitivitySlider = document.getElementById('sensitivitySlider');
+    const sensitivityValText = document.getElementById('sensitivityValText');
+    const volumeSlider = document.getElementById('volumeSlider');
+    const volumeValText = document.getElementById('volumeValText');
+    const calibrateBtn = document.getElementById('calibrateBtn');
+    const testHornBtn = document.getElementById('testHornBtn');
+    const calProgressContainer = document.getElementById('calibrationProgressContainer');
+    const calFill = document.getElementById('calFill');
+    const calProgressText = document.getElementById('calProgressText');
+
+    const logTableBody = document.getElementById('logTableBody');
+    const emptyLogPlaceholder = document.getElementById('emptyLogPlaceholder');
+    const logCountBadge = document.getElementById('logCountBadge');
+    let interceptionCount = 0;
+
+    const chartCanvas = document.getElementById('probabilityChartCanvas');
+    const chartCtx = chartCanvas ? chartCanvas.getContext('2d') : null;
+    const probabilityHistory = new Array(80).fill(0);
+
+    let frameCount = 0;
+    let fpsTimer = performance.now();
+
+    function initApp() {
+      detector.onSneezeDetected((eventData) => {
+        airhorn.playSneezeDeflectorHorn();
+        triggerWarningStrobe(500);
+        addInterceptionLog(eventData);
+      });
+
+      volumeSlider.addEventListener('input', (e) => {
+        const val = parseInt(e.target.value, 10);
+        volumeValText.textContent = `${val}%`;
+        airhorn.setVolume(val / 100);
+      });
+      airhorn.setVolume(parseInt(volumeSlider.value, 10) / 100);
+
+      sensitivitySlider.addEventListener('input', (e) => {
+        const val = parseFloat(e.target.value);
+        sensitivityValText.textContent = `${val.toFixed(1)}x`;
+        detector.sensitivity = val;
+      });
+      detector.sensitivity = parseFloat(sensitivitySlider.value);
+
+      testHornBtn.addEventListener('click', () => {
+        airhorn.init();
+        airhorn.playSneezeDeflectorHorn();
+        triggerWarningStrobe(500);
+        addInterceptionLog({
+          threat: detector.metrics.sneezeThreat || 95,
+          metrics: detector.metrics,
+          isTest: true
+        });
+      });
+
+      calibrateBtn.addEventListener('click', () => {
+        if (detector.isCalibrating) return;
+        runCalibrationCountdown();
+      });
+
+      startCamBtn.addEventListener('click', async () => {
+        airhorn.init();
+        startOverlay.style.display = 'none';
+        sysStatusText.textContent = 'LOADING MODEL...';
+
+        await detector.init();
+        sysStatusText.textContent = 'ACTIVE';
+
+        startWebcam();
+      });
+    }
+
+    async function startWebcam() {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({
+          video: {
+            width: { ideal: 1280 },
+            height: { ideal: 720 },
+            facingMode: 'user'
+          },
+          audio: false
+        });
+
+        video.srcObject = stream;
+        await video.play();
+
+        cameraStatusBadge.textContent = 'ONLINE (1280x720)';
+        cameraStatusBadge.className = 'camera-mode-badge';
+
+        resizeCanvas();
+        window.addEventListener('resize', resizeCanvas);
+
+        requestAnimationFrame(renderLoop);
+      } catch (err) {
+        console.error('Webcam Access Failed:', err);
+        sysStatusText.textContent = 'CAM ERROR';
+        sysStatusText.className = 'val warning';
+        alert('Unable to access webcam. Please ensure webcam permissions are enabled.');
+      }
+    }
+
+    function resizeCanvas() {
+      if (video.videoWidth && video.videoHeight) {
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+      }
+    }
+
+    function runCalibrationCountdown() {
+      calProgressContainer.classList.remove('hidden');
+      let countdown = 3;
+      calProgressText.textContent = `GET READY... KEEP NEUTRAL FACE STILL IN (${countdown}s)`;
+      calFill.style.width = '0%';
+
+      const timer = setInterval(() => {
+        countdown--;
+        if (countdown > 0) {
+          calProgressText.textContent = `KEEP NEUTRAL FACE STILL... (${countdown}s)`;
+          calFill.style.width = `${((3 - countdown) / 3) * 40}%`;
+        } else {
+          clearInterval(timer);
+          calProgressText.textContent = 'CALIBRATING NEUTRAL BASELINE...';
+
+          detector.calibrateNeutral((newBaseline) => {
+            calProgressContainer.classList.add('hidden');
+            calStatusText.textContent = 'CUSTOM';
+            calStatusText.className = 'val active';
+            baseEAR.textContent = newBaseline.ear.toFixed(2);
+            baseNose.textContent = newBaseline.noseScrunch.toFixed(2);
+            baseMAR.textContent = newBaseline.mar.toFixed(2);
+          });
+        }
+      }, 1000);
+    }
+
+    function triggerWarningStrobe(durationMs = 500) {
+      warningOverlay.classList.remove('hidden');
+      setTimeout(() => {
+        warningOverlay.classList.add('hidden');
+      }, durationMs);
+    }
+
+    function addInterceptionLog(data) {
+      if (emptyLogPlaceholder) emptyLogPlaceholder.remove();
+
+      interceptionCount++;
+      logCountBadge.textContent = `${interceptionCount} INTERCEPTED`;
+
+      const now = new Date();
+      const timeStr = now.toTimeString().split(' ')[0] + '.' + String(now.getMilliseconds()).padStart(3, '0');
+
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td>#${interceptionCount}</td>
+        <td>${timeStr}</td>
+        <td style="color:#ff0055; font-weight:700;">${data.threat}%</td>
+        <td>${data.metrics ? data.metrics.ear.toFixed(2) : '0.28'}</td>
+        <td>${data.metrics ? data.metrics.noseScrunch.toFixed(2) : '0.35'}</td>
+        <td><span class="badge-intercepted">${data.isTest ? 'TEST TRIGGER' : 'SNEEZE INTERCEPTED'}</span></td>
+      `;
+
+      logTableBody.insertBefore(tr, logTableBody.firstChild);
+    }
+
+    function renderLoop(timestamp) {
+      frameCount++;
+      const now = performance.now();
+      if (now - fpsTimer >= 1000) {
+        fpsCounter.textContent = frameCount;
+        frameCount = 0;
+        fpsTimer = now;
+      }
+
+      const ctx = canvas.getContext('2d');
+      const w = canvas.width;
+      const h = canvas.height;
+
+      if (w && h) {
+        ctx.save();
+        ctx.translate(w, 0);
+        ctx.scale(-1, 1);
+        ctx.drawImage(video, 0, 0, w, h);
+        ctx.restore();
+      }
+
+      if (detector.isCalibrating) {
+        calFill.style.width = `${40 + detector.calibrationProgress * 0.6}%`;
+      }
+
+      const result = detector.processFrame(video, timestamp);
+
+      if (result) {
+        const { landmarks, metrics, baseline, isTriggered } = result;
+        drawFacialMeshOverlay(ctx, w, h, landmarks, metrics.sneezeThreat, isTriggered);
+        updateHUD(metrics, baseline, isTriggered);
+      }
+
+      requestAnimationFrame(renderLoop);
+    }
+
+    function drawFacialMeshOverlay(ctx, w, h, landmarks, threatScore, isTriggered) {
+      if (!landmarks) return;
+
+      const isBuilding = threatScore > 45 || isTriggered;
+      const primaryColor = isBuilding ? '#ff0055' : '#00f0ff';
+      const glowColor = isBuilding ? 'rgba(255, 0, 85, 0.9)' : 'rgba(0, 240, 255, 0.7)';
+
+      ctx.save();
+      ctx.translate(w, 0);
+      ctx.scale(-1, 1);
+
+      ctx.strokeStyle = primaryColor;
+      ctx.fillStyle = primaryColor;
+      ctx.shadowColor = glowColor;
+      ctx.shadowBlur = 10;
+      ctx.lineWidth = isBuilding ? 2.5 : 1.5;
+
+      const drawPath = (indices, closed = false) => {
+        if (indices.length === 0) return;
+        ctx.beginPath();
+        const p0 = landmarks[indices[0]];
+        ctx.moveTo(p0.x * w, p0.y * h);
+        for (let i = 1; i < indices.length; i++) {
+          const pt = landmarks[indices[i]];
+          ctx.lineTo(pt.x * w, pt.y * h);
+        }
+        if (closed) ctx.closePath();
+        ctx.stroke();
+      };
+
+      const drawPoints = (indices, radius = 3) => {
+        indices.forEach(idx => {
+          const pt = landmarks[idx];
+          if (pt) {
+            ctx.beginPath();
+            ctx.arc(pt.x * w, pt.y * h, radius, 0, 2 * Math.PI);
+            ctx.fill();
+          }
+        });
+      };
+
+      drawPath([33, 160, 158, 133, 153, 144], true);
+      drawPath([362, 385, 387, 263, 373, 380], true);
+      drawPath([168, 6, 197, 195, 5], false);
+
+      ctx.strokeStyle = '#ffbb00';
+      ctx.setLineDash([3, 3]);
+      drawPath([168, 0], false);
+      ctx.setLineDash([]);
+
+      ctx.strokeStyle = primaryColor;
+      drawPath([61, 78, 13, 308, 291, 14], true);
+
+      ctx.fillStyle = isBuilding ? '#ff0055' : '#00ffcc';
+      drawPoints([33, 133, 362, 263, 168, 0, 13, 14], 3.5);
+
+      ctx.restore();
+    }
+
+    function updateHUD(metrics, baseline, isTriggered) {
+      const threat = metrics.sneezeThreat;
+
+      const totalLength = 500;
+      const targetOffset = totalLength - (threat / 100) * 250;
+      gaugeValueArc.style.strokeDashoffset = targetOffset;
+      gaugeNumText.textContent = `${threat}%`;
+
+      if (isTriggered) {
+        gaugeValueArc.style.stroke = '#ff0055';
+        gaugeStatusSub.textContent = 'INTERRUPT TRIGGERED!';
+        gaugeStatusSub.style.fill = '#ff0055';
+      } else if (threat > 45) {
+        gaugeValueArc.style.stroke = '#ff0055';
+        gaugeStatusSub.textContent = 'PRE-SNEEZE REFLEX RISING!';
+        gaugeStatusSub.style.fill = '#ff0055';
+      } else {
+        gaugeValueArc.style.stroke = '#00f0ff';
+        gaugeStatusSub.textContent = 'STABLE / NORMAL';
+        gaugeStatusSub.style.fill = '#00ffcc';
+      }
+
+      valEAR.textContent = metrics.ear.toFixed(2);
+      const earPct = Math.min(100, Math.max(0, (metrics.ear / 0.5) * 100));
+      barEAR.style.width = `${earPct}%`;
+      const dEAR = metrics.ear - baseline.ear;
+      deltaEAR.textContent = (dEAR >= 0 ? '+' : '') + dEAR.toFixed(2);
+      deltaEAR.style.color = dEAR < -0.05 ? '#ff0055' : '#94a3b8';
+
+      valNose.textContent = metrics.noseScrunch.toFixed(2);
+      const nosePct = Math.min(100, Math.max(0, (metrics.noseScrunch / 0.5) * 100));
+      barNose.style.width = `${nosePct}%`;
+      const dNose = metrics.noseScrunch - baseline.noseScrunch;
+      deltaNose.textContent = (dNose >= 0 ? '+' : '') + dNose.toFixed(2);
+      deltaNose.style.color = dNose < -0.04 ? '#ff0055' : '#94a3b8';
+
+      valMAR.textContent = metrics.mar.toFixed(2);
+      const marPct = Math.min(100, Math.max(0, (metrics.mar / 0.6) * 100));
+      barMAR.style.width = `${marPct}%`;
+      const dMAR = metrics.mar - baseline.mar;
+      deltaMAR.textContent = (dMAR >= 0 ? '+' : '') + dMAR.toFixed(2);
+      deltaMAR.style.color = dMAR > 0.1 ? '#ff0055' : '#94a3b8';
+
+      probabilityHistory.push(threat);
+      probabilityHistory.shift();
+      drawTelemetryChart();
+    }
+
+    function drawTelemetryChart() {
+      if (!chartCtx || !chartCanvas) return;
+      const w = (chartCanvas.width = chartCanvas.clientWidth);
+      const h = (chartCanvas.height = chartCanvas.clientHeight);
+
+      chartCtx.clearRect(0, 0, w, h);
+
+      const thresholdY = h - (detector.threshold / 100) * h;
+      chartCtx.strokeStyle = 'rgba(255, 0, 85, 0.4)';
+      chartCtx.setLineDash([4, 4]);
+      chartCtx.beginPath();
+      chartCtx.moveTo(0, thresholdY);
+      chartCtx.lineTo(w, thresholdY);
+      chartCtx.stroke();
+      chartCtx.setLineDash([]);
+
+      chartCtx.strokeStyle = '#00f0ff';
+      chartCtx.lineWidth = 2;
+      chartCtx.shadowColor = 'rgba(0, 240, 255, 0.8)';
+      chartCtx.shadowBlur = 6;
+      chartCtx.beginPath();
+
+      const step = w / (probabilityHistory.length - 1);
+      probabilityHistory.forEach((val, idx) => {
+        const x = idx * step;
+        const y = h - (val / 100) * h;
+        if (idx === 0) chartCtx.moveTo(x, y);
+        else chartCtx.lineTo(x, y);
+      });
+
+      chartCtx.stroke();
+    }
+
+    document.addEventListener('DOMContentLoaded', initApp);
+  </script>
+</body>
+</html>
